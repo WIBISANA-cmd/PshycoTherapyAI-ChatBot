@@ -1,0 +1,286 @@
+<div align="center">
+
+# 💙 PshycoTherapyAI
+
+### *Ruang aman untuk bercerita — kapan pun kamu butuh.*
+
+Teman bercerita berbasis AI yang hangat, tidak menghakimi, dan selalu ada.
+Ketik, kirim pesan suara, atau tempel screenshot chat — semuanya dipahami.
+
+<br>
+
+![React](https://img.shields.io/badge/React-19-0EA5E9?style=for-the-badge&logo=react&logoColor=white)
+![Express](https://img.shields.io/badge/Express-5-38BDF8?style=for-the-badge&logo=express&logoColor=white)
+![Gemini](https://img.shields.io/badge/Gemini-3.6_Flash-7DD3FC?style=for-the-badge&logo=googlegemini&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind-v4-BAE6FD?style=for-the-badge&logo=tailwindcss&logoColor=0C4A6E)
+
+<br>
+
+```
+╭───────────────────────────────────────────────╮
+│  💙  "Halo, aku PshycoTherapyAI.              │
+│       Ceritakan apa yang sedang kamu rasakan"  │
+╰───────────────────────────────────────────────╯
+```
+
+</div>
+
+<br>
+
+## 🌤️ Apa Ini?
+
+Aplikasi chatbot psikoterapi yang dirancang untuk **mendampingi**, bukan menggurui.
+Bayangkan seorang teman yang selalu punya waktu untuk mendengarkan, jam berapa pun kamu butuh.
+
+> [!IMPORTANT]
+> PshycoTherapyAI **bukan pengganti** psikolog atau psikiater berlisensi.
+> Dalam keadaan darurat, hubungi **119 ext. 8** (Layanan Sehat Jiwa Kemenkes) atau **112**.
+
+<br>
+
+## ✨ Yang Bisa Dilakukan
+
+| | Fitur | Ceritanya |
+|:---:|---|---|
+| 💬 | **Ngobrol biasa** | Jawaban mengalir kata demi kata, terasa seperti diketik sungguhan |
+| 🎙️ | **Pesan suara** | Rekam langsung dari browser. AI mendengar *isi* sekaligus *nada* suaramu — kalau terdengar berat, dia akan mengakuinya |
+| 🖼️ | **Screenshot chat** | Tempel dengan `Ctrl/Cmd + V`. AI membaca dinamika percakapannya, bukan menghakimi lawan bicaramu |
+| 🧠 | **Ingat konteks** | Tanya lanjutan soal screenshot tadi? Masih nyambung |
+| 🤝 | **Jaring pengaman** | Terdeteksi tanda bahaya → nomor bantuan langsung muncul, lewat teks maupun suara |
+| 🔒 | **Tanpa akun** | Tidak ada login, tidak ada database. Ceritamu tidak disimpan di server |
+| 🎨 | **Sky blue & lembut** | Animasi halus, responsif dari HP sampai desktop, ramah pembaca layar |
+
+<br>
+
+## 🚀 Jalankan dalam 3 Menit
+
+### 1️⃣ Siapkan kunci API
+
+Buat file `gemini-flash-api/.env`:
+
+```ini
+GEMINI_API_KEY=punyamu_dari_ai.google.dev
+```
+
+> 🔑 Ambil gratis di [ai.google.dev](https://ai.google.dev). Kunci ini **hanya hidup di server** — tidak pernah sampai ke browser.
+
+### 2️⃣ Nyalakan backend
+
+```bash
+cd gemini-flash-api
+npm install
+npm run dev
+```
+
+✅ `server ready on http://localhost:3000`
+
+### 3️⃣ Nyalakan frontend
+
+Buka terminal **baru**:
+
+```bash
+cd gemini-chatbot-api
+npm install
+npm run dev
+```
+
+🎉 Buka **http://localhost:5173** — selamat bercerita!
+
+<br>
+
+## 📁 Isi Proyek
+
+```
+hcktiv8id/
+│
+├── 🧠 gemini-flash-api/          BACKEND — Express + Gemini
+│   ├── index.js                  server, endpoint chat, streaming
+│   ├── prompt.js                 kepribadian & batasan AI
+│   ├── attachments.js            penjaga gerbang lampiran
+│   ├── test.js                   self-check (npm test)
+│   └── .env                      🔐 kunci API
+│
+└── 💙 gemini-chatbot-api/        FRONTEND — React + Tailwind
+    ├── vite.config.js            proxy /api → backend
+    └── src/
+        ├── App.jsx               rangka halaman
+        ├── useChat.js            otak percakapan
+        ├── attach.js             pengurus lampiran
+        └── components/
+            ├── Welcome.jsx       layar sambutan
+            ├── MessageList.jsx   daftar percakapan
+            ├── Bubble.jsx        gelembung pesan
+            ├── Composer.jsx      kotak ketik + lampiran
+            ├── Recorder.jsx      perekam suara
+            ├── Typing.jsx        titik-titik "sedang mengetik"
+            └── CrisisBanner.jsx  banner bantuan darurat
+```
+
+<br>
+
+## 🎈 Cara Pakai Fitur Serunya
+
+<table>
+<tr><td width="50%" valign="top">
+
+### 🎙️ Kirim pesan suara
+
+1. Klik ikon **mikrofon**
+2. Izinkan akses mikrofon
+3. Cerita saja — timer berjalan
+4. Klik **Selesai** → **Kirim**
+
+*Maksimal 2 menit. Kalau berubah pikiran, klik **Batal**.*
+
+</td><td width="50%" valign="top">
+
+### 🖼️ Kirim screenshot chat
+
+1. Potret layar (`Cmd+Shift+4` / `Win+Shift+S`)
+2. Klik kotak ketik
+3. Tempel: `Ctrl/Cmd + V`
+4. Tambahkan konteks → **Kirim**
+
+*Atau klik ikon klip. Maksimal 4 lampiran, 8MB masing-masing.*
+
+</td></tr>
+</table>
+
+<br>
+
+## 🔌 API
+
+| Method | Endpoint | Fungsi |
+|---|---|---|
+| `GET` | `/api/health` | Cek server hidup |
+| `POST` | `/api/chat` | Kirim percakapan, terima balasan streaming (SSE) |
+
+<details>
+<summary><b>📬 Contoh isi permintaan</b></summary>
+
+<br>
+
+```jsonc
+{
+  "messages": [
+    {
+      "role": "user",
+      "text": "ini chatku sama pacarku semalam",
+      "files": [
+        { "mime": "image/png", "data": "iVBORw0KG..." }  // base64
+      ]
+    }
+  ]
+}
+```
+
+Balasannya berupa aliran SSE:
+
+```
+data: {"type":"crisis"}                    ← hanya jika terdeteksi tanda bahaya
+data: {"type":"chunk","text":"Melihat "}
+data: {"type":"chunk","text":"percakapan ini…"}
+data: {"type":"done"}
+```
+
+**Batasan bawaan:** 20 permintaan/menit · 20 pesan terakhir sebagai konteks · 4 lampiran · 8MB per berkas.
+
+</details>
+
+<br>
+
+## 🛡️ Cara Kami Menjaga
+
+Aplikasi ini menyentuh orang dalam kondisi rentan, jadi ada beberapa hal yang **tidak** dipangkas:
+
+- 🚨 **Deteksi krisis dua lapis** — pola kata pada teks, **plus** penyaringan balasan AI (supaya risiko yang disampaikan lewat suara atau gambar tetap tertangkap)
+- 🙅 **AI dilarang** mendiagnosis, menyebut nama obat, menjanjikan kesembuhan, atau melabeli orang di screenshot sebagai "toxic"
+- 🎯 **Fokus terkunci** — pertanyaan di luar kesehatan mental (coding, PR sekolah, politik) ditolak dengan hangat, termasuk jika dikirim sebagai gambar
+- 🔐 **Nol penyimpanan server** — riwayat hanya ada di browsermu; lampiran bahkan tidak ikut tersimpan
+- ♿ **Ramah semua orang** — pembaca layar, navigasi keyboard, dan `prefers-reduced-motion` dihormati
+
+<br>
+
+## 🧪 Cek Kesehatan Kode
+
+```bash
+cd gemini-flash-api && npm test        # 23 pemeriksaan: deteksi krisis, parser SSE, validasi lampiran
+cd gemini-chatbot-api && npm run build # pastikan frontend ter-build bersih
+```
+
+<br>
+
+## 🩹 Kalau Ada Masalah
+
+<details>
+<summary><b>❓ Jawaban AI terpotong di tengah kalimat</b></summary>
+
+<br>
+
+Sudah diperbaiki, tapi ini penyebabnya kalau kamu mengutak-atik lagi:
+
+`gemini-3.6-flash` adalah *thinking model*. Dari `maxOutputTokens: 1024`, hampir **1000 token habis dipakai berpikir** — sisanya tidak cukup untuk menjawab.
+
+Kuncinya ada di [`index.js`](gemini-flash-api/index.js):
+
+```js
+thinkingConfig: { thinkingLevel: 'minimal' },
+maxOutputTokens: 2048,
+```
+
+Percakapan terapeutik butuh kehangatan, bukan penalaran mendalam — jadi ini juga bikin balasan lebih cepat dan lebih murah.
+
+</details>
+
+<details>
+<summary><b>❓ Mikrofon tidak bisa dipakai</b></summary>
+
+<br>
+
+Browser hanya mengizinkan mikrofon di `localhost` atau `https`. Kalau membuka lewat alamat IP (`192.168.x.x`), izin akan ditolak.
+Cek juga ikon gembok di address bar → **Izin situs** → **Mikrofon**.
+
+</details>
+
+<details>
+<summary><b>❓ Pesan "Koneksi ke server terputus"</b></summary>
+
+<br>
+
+Backend belum jalan. Cek dengan:
+
+```bash
+curl localhost:3000/api/health
+```
+
+Harusnya membalas `{"ok":true,"model":"gemini-3.6-flash"}`.
+
+</details>
+
+<details>
+<summary><b>❓ Muncul "Layanan sedang padat"</b></summary>
+
+<br>
+
+Kuota Gemini gratis sedang penuh, atau kamu menembus batas 20 permintaan/menit. Tunggu sebentar lalu coba lagi.
+
+</details>
+
+<br>
+
+---
+
+<div align="center">
+
+### 🌈
+
+**Kamu tidak sendirian.**
+
+Kalau bebannya terasa terlalu berat, tolong hubungi orang sungguhan —
+**119 ext. 8** · **112** · atau satu orang yang kamu percaya, hari ini juga.
+
+<br>
+
+*Dibuat dengan 💙 untuk siapa pun yang butuh didengarkan.*
+
+</div>
