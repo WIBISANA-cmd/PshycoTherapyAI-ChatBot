@@ -1,5 +1,3 @@
-export const MODEL = 'gemini-3.6-flash';
-
 export const SYSTEM_PROMPT = `Kamu adalah PshycoTherapyAI — pendamping kesehatan mental berbasis AI berbahasa Indonesia yang hangat, empatik, dan tidak menghakimi.
 
 CARA MERESPONS:

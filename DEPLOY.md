@@ -8,22 +8,17 @@
 
 ---
 
-## ⚠️ Baca Ini Dulu — Kuota Gemini
+## ⚠️ Baca Ini Dulu — Kuota & Dua Model
 
-Saat pengujian, kunci API kamu mengembalikan error ini:
+Backend memanggil endpoint **OpenAI-compatible** (`BASE_URL_AI`), bukan Google API langsung.
+Kalau saldo/kuota di penyedia habis, aplikasi tetap hidup dan tidak crash — pengguna melihat
+pesan *"Layanan sedang padat"*. Cek saldo di dashboard penyediamu sebelum deploy.
 
-```
-Quota exceeded — generate_content_free_tier_requests
-limit: 20, model: gemini-3.6-flash
-```
-
-**Free tier Gemini hanya memberi 20 request per hari per model.** Untuk chatbot yang dipakai
-orang lain, itu habis dalam hitungan menit. Aplikasinya akan tetap hidup dan tidak crash
-(pengguna melihat pesan *"Layanan sedang padat"*), tapi praktis tidak bisa dipakai.
-
-> ✅ **Sebelum deploy:** aktifkan billing di [Google AI Studio](https://aistudio.google.com/apikey) →
-> pilih project → **Set up Billing**. Batasnya langsung naik drastis dan kamu hanya membayar
-> pemakaian nyata. Model `gemini-3.6-flash` termasuk yang paling murah.
+> ⚠️ **Dua model, dua kunci.** `MODEL_AI` (MiniMax-M2.7-highspeed) hanya bisa memproses teks —
+> gambar dan audio diabaikan diam-diam. Karena itu pesan yang membawa **screenshot atau pesan
+> suara** dialihkan ke `MODEL_AI_MULTIMODAL` (default `gemini/gemini-3.1-flash-lite`), yang
+> dipanggil pakai kunci sendiri: `API_KEY_AI_MULTIMODAL`. Isi keduanya — tanpa
+> `API_KEY_AI_MULTIMODAL`, fitur suara & screenshot berhenti berfungsi.
 
 ---
 
@@ -44,7 +39,7 @@ Berbeda dengan development yang menjalankan dua server, produksi memakai **satu 
                     │    └─ / → hasil build React  │
                     └──────────────┬───────────────┘
                                    │
-                            🔑 Gemini API
+                     🔑 LLM OpenAI-compatible
 ```
 
 **Kenapa satu container?** Satu domain, tanpa CORS, tanpa konfigurasi proxy, tanpa
@@ -58,7 +53,7 @@ variabel URL backend di frontend. Lebih sedikit yang bisa salah.
 |---|---|
 | 🖥️ | VPS dengan Dokploy terpasang (minimal 2GB RAM — build Vite butuh memori) |
 | 🌐 | Domain/subdomain yang **A record**-nya sudah mengarah ke IP VPS |
-| 🔑 | `GEMINI_API_KEY` yang **billing-nya sudah aktif** (lihat peringatan di atas) |
+| 🔑 | `API_KEY_AI` dan `API_KEY_AI_MULTIMODAL` yang **saldonya sudah terisi** (lihat peringatan di atas) |
 | 📦 | Repository Git (GitHub/GitLab) berisi project ini |
 
 ---
@@ -123,7 +118,11 @@ Masih di tab **General**, bagian **Build Type**:
 Buka tab **Environment**, tempel ini:
 
 ```ini
-GEMINI_API_KEY=isi_kunci_aslimu_di_sini
+API_KEY_AI=isi_kunci_model_teks
+BASE_URL_AI=https://ai.sumopod.com/v1
+MODEL_AI=MiniMax-M2.7-highspeed
+MODEL_AI_MULTIMODAL=gemini/gemini-3.1-flash-lite
+API_KEY_AI_MULTIMODAL=isi_kunci_model_gambar_suara
 PORT=3000
 TRUST_PROXY=1
 NODE_ENV=production
@@ -131,7 +130,7 @@ NODE_ENV=production
 
 <table>
 <tr><th>Variabel</th><th>Kenapa penting</th></tr>
-<tr><td><code>GEMINI_API_KEY</code></td><td>Tanpa ini container <b>sengaja gagal start</b> dengan pesan jelas di log — bukan hidup lalu error diam-diam</td></tr>
+<tr><td><code>API_KEY_AI</code> / <code>API_KEY_AI_MULTIMODAL</code></td><td>Tanpa salah satunya container <b>sengaja gagal start</b> dengan pesan jelas di log — bukan hidup lalu error diam-diam. Dua kunci terpisah karena dua model (teks vs gambar/suara) punya paket/kuota masing-masing</td></tr>
 <tr><td><code>TRUST_PROXY=1</code></td><td><b>Wajib.</b> Di balik Traefik, semua request terlihat berasal dari satu IP proxy. Tanpa ini rate limit 20/menit berlaku untuk <i>seluruh pengunjung digabung</i> — satu orang aktif memblokir semua orang</td></tr>
 <tr><td><code>PORT</code></td><td>Harus sama dengan port yang diisi di Domain (langkah berikutnya)</td></tr>
 </table>
@@ -185,7 +184,7 @@ berhasil masuk ke container. Kalau kalimat itu tidak muncul, frontend gagal ter-
 ```bash
 # 1. API hidup?
 curl https://therapy.domainmu.com/api/health
-# → {"ok":true,"model":"gemini-3.6-flash"}
+# → {"ok":true,"model":"MiniMax-M2.7-highspeed","modelMultimodal":"gemini/gemini-3.1-flash-lite"}
 
 # 2. Halaman tersaji?
 curl -s https://therapy.domainmu.com | grep -o "<title>.*</title>"
@@ -236,12 +235,13 @@ git commit -m "sertakan lockfile" && git push
 </details>
 
 <details>
-<summary><b>❌ Container langsung mati: "GEMINI_API_KEY belum diset"</b></summary>
+<summary><b>❌ Container langsung mati: "API_KEY_AI belum diset"</b></summary>
 
 <br>
 
-Ini memang disengaja. Isi variabelnya di tab **Environment** lalu **Redeploy**.
-Perhatikan: menyimpan environment saja tidak cukup — harus deploy ulang.
+Ini memang disengaja. Pesan yang sama muncul untuk `API_KEY_AI`, `API_KEY_AI_MULTIMODAL`,
+atau `BASE_URL_AI` — cek nama variabel yang disebut di log, isi di tab **Environment**,
+lalu **Redeploy**. Perhatikan: menyimpan environment saja tidak cukup — harus deploy ulang.
 
 </details>
 
@@ -295,7 +295,7 @@ di luar `localhost`/`https`. Aktifkan Let's Encrypt di tab Domains dan akses lew
 
 <br>
 
-Kuota Gemini, bukan bug. Lihat peringatan di paling atas dokumen ini — aktifkan billing.
+Kuota atau saldo di penyedia LLM habis, bukan bug. Lihat peringatan di paling atas dokumen ini.
 Cek pemakaianmu di [ai.dev/rate-limit](https://ai.dev/rate-limit).
 
 </details>
@@ -324,18 +324,24 @@ Hasilnya:
 | Container start | ✅ `server ready on port 3000 (menyajikan frontend juga)` |
 | `GET /` | ✅ halaman React tersaji |
 | `GET /sesi/apa-saja` | ✅ status 200 — SPA fallback jalan |
-| `GET /api/health` | ✅ `{"ok":true,"model":"gemini-3.6-flash"}` |
+| `GET /api/health` | ✅ `{"ok":true,"model":"MiniMax-M2.7-highspeed","modelMultimodal":"gemini/gemini-3.1-flash-lite"}` |
 | Aset ber-hash | ✅ `Cache-Control: public, max-age=31536000` |
 | HEALTHCHECK Docker | ✅ `healthy` dalam 10 detik |
 | User container | ✅ `node`, bukan root |
 | Kebocoran `.env` | ✅ tidak ada `.env` di dalam image |
-| Tanpa `GEMINI_API_KEY` | ✅ berhenti dengan pesan jelas, exit code 1 |
+| Tanpa `API_KEY_AI` / `API_KEY_AI_MULTIMODAL` | ✅ berhenti dengan pesan jelas, exit code 1 |
 
 Mengulanginya sendiri, dari root project:
 
 ```bash
 docker build -t pshycotherapy .
-docker run --rm -p 3000:3000 -e GEMINI_API_KEY=kuncimu pshycotherapy
+docker run --rm -p 3000:3000 \
+  -e API_KEY_AI=kunci_model_teks \
+  -e BASE_URL_AI=https://ai.sumopod.com/v1 \
+  -e MODEL_AI=MiniMax-M2.7-highspeed \
+  -e MODEL_AI_MULTIMODAL=gemini/gemini-3.1-flash-lite \
+  -e API_KEY_AI_MULTIMODAL=kunci_model_gambar_suara \
+  pshycotherapy
 ```
 
 Buka http://localhost:3000 — tampilannya persis seperti hasil deploy nanti.

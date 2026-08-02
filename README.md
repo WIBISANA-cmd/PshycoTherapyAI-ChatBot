@@ -11,7 +11,7 @@ Ketik, kirim pesan suara, atau tempel screenshot chat — semuanya dipahami.
 
 ![React](https://img.shields.io/badge/React-19-0EA5E9?style=for-the-badge&logo=react&logoColor=white)
 ![Express](https://img.shields.io/badge/Express-5-38BDF8?style=for-the-badge&logo=express&logoColor=white)
-![Gemini](https://img.shields.io/badge/Gemini-3.6_Flash-7DD3FC?style=for-the-badge&logo=googlegemini&logoColor=white)
+![MiniMax](https://img.shields.io/badge/MiniMax-M2.7_highspeed-7DD3FC?style=for-the-badge&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind-v4-BAE6FD?style=for-the-badge&logo=tailwindcss&logoColor=0C4A6E)
 
 <br>
@@ -59,10 +59,15 @@ Bayangkan seorang teman yang selalu punya waktu untuk mendengarkan, jam berapa p
 Buat file `gemini-flash-api/.env`:
 
 ```ini
-GEMINI_API_KEY=punyamu_dari_ai.google.dev
+API_KEY_AI=sk-kunci_model_teks
+BASE_URL_AI=https://ai.sumopod.com/v1
+MODEL_AI=MiniMax-M2.7-highspeed
+
+MODEL_AI_MULTIMODAL=gemini/gemini-3.1-flash-lite
+API_KEY_AI_MULTIMODAL=sk-kunci_model_gambar_suara
 ```
 
-> 🔑 Ambil gratis di [ai.google.dev](https://ai.google.dev). Kunci ini **hanya hidup di server** — tidak pernah sampai ke browser.
+> 🔑 `MODEL_AI` hanya memproses teks; pesan dengan screenshot atau suara otomatis dialihkan ke `MODEL_AI_MULTIMODAL`, yang dipanggil pakai kuncinya sendiri (`API_KEY_AI_MULTIMODAL`) — kuota/paketnya terpisah dari model teks. Kedua kunci **hanya hidup di server** — tidak pernah sampai ke browser.
 
 ### 2️⃣ Nyalakan backend
 
@@ -96,7 +101,13 @@ Ada Dockerfile siap pakai dan panduan lengkap Dokploy langkah demi langkah:
 
 ```bash
 docker build -t pshycotherapy .
-docker run --rm -p 3000:3000 -e GEMINI_API_KEY=kuncimu pshycotherapy
+docker run --rm -p 3000:3000 \
+  -e API_KEY_AI=kunci_model_teks \
+  -e BASE_URL_AI=https://ai.sumopod.com/v1 \
+  -e MODEL_AI=MiniMax-M2.7-highspeed \
+  -e MODEL_AI_MULTIMODAL=gemini/gemini-3.1-flash-lite \
+  -e API_KEY_AI_MULTIMODAL=kunci_model_gambar_suara \
+  pshycotherapy
 ```
 
 Di produksi keduanya menyatu jadi **satu container**: Express melayani API sekaligus
@@ -112,8 +123,9 @@ hcktiv8id/
 ├── 🐳 Dockerfile                 build 2 tahap → satu image produksi
 ├── 📘 DEPLOY.md                  panduan deploy ke Dokploy
 │
-├── 🧠 gemini-flash-api/          BACKEND — Express + Gemini
+├── 🧠 gemini-flash-api/          BACKEND — Express + LLM OpenAI-compatible
 │   ├── index.js                  server, endpoint chat, streaming
+│   ├── llm.js                    klien LLM OpenAI-compatible + filter <think>
 │   ├── prompt.js                 kepribadian & batasan AI
 │   ├── attachments.js            penjaga gerbang lampiran
 │   ├── test.js                   self-check (npm test)
@@ -224,7 +236,7 @@ Aplikasi ini menyentuh orang dalam kondisi rentan, jadi ada beberapa hal yang **
 ## 🧪 Cek Kesehatan Kode
 
 ```bash
-cd gemini-flash-api && npm test        # 23 pemeriksaan: deteksi krisis, parser SSE, validasi lampiran
+cd gemini-flash-api && npm test        # deteksi krisis, parser SSE, validasi lampiran, filter <think>
 cd gemini-chatbot-api && npm run build # pastikan frontend ter-build bersih
 ```
 
@@ -239,16 +251,18 @@ cd gemini-chatbot-api && npm run build # pastikan frontend ter-build bersih
 
 Sudah diperbaiki, tapi ini penyebabnya kalau kamu mengutak-atik lagi:
 
-`gemini-3.6-flash` adalah *thinking model*. Dari `maxOutputTokens: 1024`, hampir **1000 token habis dipakai berpikir** — sisanya tidak cukup untuk menjawab.
+`MiniMax-M2.7-highspeed` adalah *thinking model*, dan penalarannya ikut memakan jatah token.
+Kalau `maxTokens` terlalu pas-pasan, balasannya kepotong sebelum sempat selesai.
 
 Kuncinya ada di [`index.js`](gemini-flash-api/index.js):
 
 ```js
-thinkingConfig: { thinkingLevel: 'minimal' },
-maxOutputTokens: 2048,
+maxTokens: 3072,
 ```
 
-Percakapan terapeutik butuh kehangatan, bukan penalaran mendalam — jadi ini juga bikin balasan lebih cepat dan lebih murah.
+Penalarannya dikirim sebagai blok `<think>…</think>` di dalam stream. Blok itu disaring di
+[`llm.js`](gemini-flash-api/llm.js) (`thinkFilter`) supaya isi kepala model tidak muncul di layar —
+termasuk saat tagnya terbelah antar-chunk SSE.
 
 </details>
 
@@ -273,7 +287,7 @@ Backend belum jalan. Cek dengan:
 curl localhost:3000/api/health
 ```
 
-Harusnya membalas `{"ok":true,"model":"gemini-3.6-flash"}`.
+Harusnya membalas `{"ok":true,"model":"MiniMax-M2.7-highspeed","modelMultimodal":"gemini/gemini-3.1-flash-lite"}`.
 
 </details>
 
@@ -282,7 +296,7 @@ Harusnya membalas `{"ok":true,"model":"gemini-3.6-flash"}`.
 
 <br>
 
-Kuota Gemini gratis sedang penuh, atau kamu menembus batas 20 permintaan/menit. Tunggu sebentar lalu coba lagi.
+Kuota/saldo di penyedia LLM sedang habis, atau kamu menembus batas 20 permintaan per menit dari rate limit server. Tunggu sebentar lalu coba lagi.
 
 </details>
 

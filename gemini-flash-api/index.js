@@ -4,18 +4,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { GoogleGenAI } from '@google/genai';
-import { MODEL, SYSTEM_PROMPT, CRISIS_PROMPT, isCrisis } from './prompt.js';
+import { SYSTEM_PROMPT, CRISIS_PROMPT, isCrisis } from './prompt.js';
 import { toParts } from './attachments.js';
+import { MODEL, MODEL_MULTIMODAL, missingConfig, streamChat } from './llm.js';
 
 // Gagal cepat dengan pesan jelas — jauh lebih enak di-debug daripada container yang
 // hidup tapi 500 di setiap chat.
-if (!process.env.GEMINI_API_KEY) {
-  console.error('✗ GEMINI_API_KEY belum diset. Isi di .env (lokal) atau Environment (Dokploy).');
+const missing = missingConfig();
+if (missing.length) {
+  console.error(`✗ ${missing.join(' & ')} belum diset. Isi di .env (lokal) atau Environment (Dokploy).`);
   process.exit(1);
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const app = express();
 
 const MAX_TURNS = 20; // jendela konteks: 20 pesan terakhir
@@ -29,7 +29,9 @@ app.set('trust proxy', Number(process.env.TRUST_PROXY ?? 0));
 
 app.use(express.json({ limit: '24mb' })); // screenshot + voice note dikirim sebagai base64
 
-app.get('/api/health', (req, res) => res.json({ ok: true, model: MODEL }));
+app.get('/api/health', (req, res) =>
+  res.json({ ok: true, model: MODEL, modelMultimodal: MODEL_MULTIMODAL })
+);
 
 app.post(
   '/api/chat',
@@ -40,13 +42,17 @@ app.post(
       return res.status(400).json({ error: 'messages wajib diisi' });
     }
 
-    const contents = messages.slice(-MAX_TURNS).map((m) => {
+    const history = messages.slice(-MAX_TURNS).map((m) => {
       const text = String(m.text ?? '').slice(0, MAX_CHARS);
       const media = toParts(m.files);
-      // Voice note tanpa caption: part text kosong ditolak API, jadi beri pengantar singkat.
-      const parts = [...media, { text: text || (media.length ? '(pesan ini berupa lampiran)' : ' ') }];
-      return { role: m.role === 'model' ? 'model' : 'user', parts };
+      const role = m.role === 'model' ? 'assistant' : 'user';
+      if (!media.length) return { role, content: text || ' ' };
+      // Voice note tanpa caption: blok text kosong ditolak API, jadi beri pengantar singkat.
+      return { role, content: [{ type: 'text', text: text || '(pesan ini berupa lampiran)' }, ...media] };
     });
+
+    // Hanya percakapan yang membawa lampiran yang butuh model multimodal.
+    const model = history.some((m) => Array.isArray(m.content)) ? MODEL_MULTIMODAL : MODEL;
 
     const lastUser = messages.filter((m) => m.role !== 'model').at(-1);
     const crisis = isCrisis(String(lastUser?.text ?? ''));
@@ -62,38 +68,25 @@ app.post(
     if (crisis) send({ type: 'crisis' });
 
     try {
-      const stream = await ai.models.generateContentStream({
-        model: MODEL,
-        contents,
-        config: {
-          systemInstruction: SYSTEM_PROMPT + (crisis ? CRISIS_PROMPT : ''),
-          temperature: 0.9,
-          maxOutputTokens: 2048,
-          // gemini-3.6-flash itu thinking model: tanpa ini ~1000 token habis untuk
-          // berpikir dan jawabannya terpotong di tengah kalimat (finishReason MAX_TOKENS).
-          // Percakapan terapeutik butuh kehangatan, bukan penalaran dalam.
-          thinkingConfig: { thinkingLevel: 'minimal' },
-          // Domain ini wajar menyentuh topik sedih/gelap; blokir hanya yang berisiko tinggi
-          // supaya model tidak menolak percakapan terapeutik yang sah.
-          safetySettings: [
-            'HARM_CATEGORY_DANGEROUS_CONTENT',
-            'HARM_CATEGORY_HARASSMENT',
-            'HARM_CATEGORY_HATE_SPEECH',
-            'HARM_CATEGORY_SEXUALLY_EXPLICIT',
-          ].map((category) => ({ category, threshold: 'BLOCK_ONLY_HIGH' })),
-        },
-      });
-
       let sent = 0;
       let finish;
       let reply = '';
-      for await (const chunk of stream) {
-        if (chunk.text) {
-          send({ type: 'chunk', text: chunk.text });
-          sent += chunk.text.length;
-          reply += chunk.text;
+      const stream = streamChat({
+        model,
+        messages: [{ role: 'system', content: SYSTEM_PROMPT + (crisis ? CRISIS_PROMPT : '') }, ...history],
+        temperature: 0.9,
+        // MiniMax itu thinking model dan penalarannya ikut menghabiskan token,
+        // jadi jatahnya lebih longgar daripada panjang balasan yang diinginkan.
+        maxTokens: 3072,
+      });
+
+      for await (const part of stream) {
+        if (part.text) {
+          send({ type: 'chunk', text: part.text });
+          sent += part.text.length;
+          reply += part.text;
         }
-        finish = chunk.candidates?.[0]?.finishReason ?? finish;
+        if (part.finish) finish = part.finish;
       }
 
       // Regex hanya bisa membaca teks, jadi risiko yang disampaikan lewat voice note atau
@@ -102,7 +95,7 @@ app.post(
       if (!crisis && isCrisis(reply)) send({ type: 'crisis' });
 
       // Jaring pengaman kalau jawaban tetap kepotong di tengah kalimat
-      if (finish === 'MAX_TOKENS' && sent > 0) {
+      if (finish === 'length' && sent > 0) {
         send({ type: 'chunk', text: '\n\n_(maaf, responsku kepanjangan dan terpotong — bilang "lanjutkan" kalau kamu mau aku teruskan)_' });
       }
       if (sent === 0) {
