@@ -1,0 +1,56 @@
+@import 'tailwindcss';
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply text-slate-700 antialiased;
+    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  /* Fokus keyboard tetap terlihat jelas di seluruh app */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-sky-500;
+  }
+  /* Tailwind v4 menyetel button ke cursor:default — kembalikan ke pointer */
+  button:not(:disabled),
+  [role='button'],
+  a {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* Scrollbar tipis biar area chat tidak berisik */
+.scroll-soft {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-sky-200) transparent;
+}
+
+/* Markdown dari AI: jaga jarak antar elemen tanpa plugin typography */
+.md > * + * {
+  @apply mt-3;
+}
+.md ul {
+  @apply list-disc pl-5 space-y-1;
+}
+.md ol {
+  @apply list-decimal pl-5 space-y-1;
+}
+.md strong {
+  @apply font-semibold text-slate-900;
+}
+.md code {
+  @apply rounded bg-sky-50 px-1 py-0.5 text-sm text-sky-800;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
