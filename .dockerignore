@@ -1,0 +1,21 @@
+# Rahasia — kunci API masuk lewat Environment Dokploy, JANGAN ikut ke dalam image
+**/.env
+**/.env.*
+!**/.env.example
+
+# Dipasang/dibangun ulang di dalam image
+**/node_modules
+**/dist
+**/build
+# hasil build frontend disalin dari tahap "web", jangan bawa versi basi dari laptop
+gemini-flash-api/public
+
+# Tidak dibutuhkan saat build
+.git
+.gitignore
+**/.DS_Store
+**/npm-debug.log*
+README.md
+DEPLOY.md
+Dockerfile
+.dockerignore

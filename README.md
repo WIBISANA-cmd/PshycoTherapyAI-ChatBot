@@ -88,17 +88,37 @@ npm run dev
 
 <br>
 
+## 🚢 Mau Deploy?
+
+Ada Dockerfile siap pakai dan panduan lengkap Dokploy langkah demi langkah:
+
+### 👉 **[Baca DEPLOY.md](DEPLOY.md)**
+
+```bash
+docker build -t pshycotherapy .
+docker run --rm -p 3000:3000 -e GEMINI_API_KEY=kuncimu pshycotherapy
+```
+
+Di produksi keduanya menyatu jadi **satu container**: Express melayani API sekaligus
+hasil build React. Satu domain, tanpa CORS, tanpa proxy.
+
+<br>
+
 ## 📁 Isi Proyek
 
 ```
 hcktiv8id/
+│
+├── 🐳 Dockerfile                 build 2 tahap → satu image produksi
+├── 📘 DEPLOY.md                  panduan deploy ke Dokploy
 │
 ├── 🧠 gemini-flash-api/          BACKEND — Express + Gemini
 │   ├── index.js                  server, endpoint chat, streaming
 │   ├── prompt.js                 kepribadian & batasan AI
 │   ├── attachments.js            penjaga gerbang lampiran
 │   ├── test.js                   self-check (npm test)
-│   └── .env                      🔐 kunci API
+│   ├── .env.example              contoh isian environment
+│   └── .env                      🔐 kunci API (jangan di-commit)
 │
 └── 💙 gemini-chatbot-api/        FRONTEND — React + Tailwind
     ├── vite.config.js            proxy /api → backend
