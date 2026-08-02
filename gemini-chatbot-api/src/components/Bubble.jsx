@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import Markdown from 'react-markdown';
 import { dataUrl } from '../attach';
+import Logo from './Logo';
 
 // Lampiran dari sesi lama tidak menyimpan base64 (lihat useChat.js), jadi tampilkan chip saja.
 function Attachment({ file }) {
@@ -33,14 +34,7 @@ export default function Bubble({ role, text, files, streaming }) {
       transition={{ type: 'spring', stiffness: 400, damping: 30 }}
       className={`flex items-end gap-2 ${isUser ? 'justify-end' : 'justify-start'}`}
     >
-      {!isUser && (
-        <div
-          aria-hidden
-          className="mb-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-linear-to-br from-sky-400 to-sky-600 text-sm shadow-sm shadow-sky-200"
-        >
-          💙
-        </div>
-      )}
+      {!isUser && <Logo className="mb-0.5 size-8 shrink-0" />}
 
       <div
         className={

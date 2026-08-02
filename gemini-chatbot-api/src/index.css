@@ -1,12 +1,25 @@
 @import 'tailwindcss';
 
+/* Palet landing: sky app tetap primer, ditemani kertas hangat + terakota
+   supaya tidak terasa seperti template gradient generik. */
+@theme {
+  --color-paper: #f6f2ec;
+  --color-paper-2: #efe8df;
+  --color-ink: #101f2b;
+  --color-ink-soft: #3d5163;
+  --color-clay: #c9765a;
+  --color-clay-soft: #e8b79f;
+  --font-display: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
+}
+
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
   }
   body {
     @apply text-slate-700 antialiased;
-    font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    font-family: var(--font-sans);
   }
   /* Fokus keyboard tetap terlihat jelas di seluruh app */
   :focus-visible {
@@ -46,11 +59,148 @@
   @apply rounded bg-sky-50 px-1 py-0.5 text-sm text-sky-800;
 }
 
+/* ---------------------------------------------------------------- landing */
+
+/* ScrollSmoother butuh wrapper fixed + content yang di-transform */
+#smooth-wrapper {
+  overflow: hidden;
+}
+
+/* Header transparan di hero, lalu memadat begitu discroll */
+.nav-shell {
+  border-radius: 1.25rem;
+  transition: background-color 0.4s ease, box-shadow 0.4s ease, backdrop-filter 0.4s ease;
+}
+body.is-scrolled .nav-shell {
+  background-color: color-mix(in oklab, var(--color-paper) 82%, transparent);
+  box-shadow: 0 10px 40px -20px color-mix(in oklab, var(--color-ink) 60%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+
+.font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+/* Baris hasil SplitText: mask supaya teks naik dari balik "lantai".
+   SplitText memasang overflow:clip pada pembungkusnya — longgarkan sedikit
+   supaya ekor huruf (g, j, y) pada font display tidak ikut terpotong. */
+.sr-line {
+  will-change: transform;
+}
+.sr-line-mask {
+  overflow-clip-margin: 0.16em;
+}
+
+/* Grain halus — satu tekstur SVG, bikin permukaan terasa kertas bukan CSS */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
+}
+
+/* Garis bawah tulisan tangan untuk kata kunci */
+.underline-hand {
+  background-image: linear-gradient(transparent 62%, var(--color-clay-soft) 62%, var(--color-clay-soft) 88%, transparent 88%);
+  background-repeat: no-repeat;
+  background-size: 0% 100%;
+  transition: background-size 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.underline-hand.is-on {
+  background-size: 100% 100%;
+}
+
+/* Marquee CSS murni */
+.marquee {
+  overflow: hidden;
+  width: 100%;
+}
+.marquee__track {
+  display: flex;
+  width: max-content;
+  animation: marquee linear infinite;
+}
+.marquee__group {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.marquee__item {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.marquee__dot {
+  display: inline-block;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin: 0 1.4rem;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.4;
+}
+@keyframes marquee {
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+
+/* Kursor lembut */
+.soft-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 60;
+  width: 22rem;
+  height: 22rem;
+  margin: -11rem 0 0 -11rem;
+  pointer-events: none;
+  border-radius: 9999px;
+  background: radial-gradient(circle, color-mix(in oklab, var(--color-sky-400) 22%, transparent) 0%, transparent 62%);
+}
+
+/* Foto: sedikit dingin secara default, hidup penuh saat disentuh */
+.photo-tone {
+  filter: saturate(0.78) contrast(1.03);
+  transition: filter 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.group:hover .photo-tone {
+  filter: saturate(1.05) contrast(1);
+  transform: scale(1.04);
+}
+
+/* Panel horizontal (dipin oleh ScrollTrigger di desktop) */
+.hstrip {
+  display: flex;
+  gap: 1.5rem;
+}
+@media (max-width: 1023px) {
+  .hstrip {
+    flex-direction: column;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+  .marquee__track {
+    animation: none;
+  }
+  /* Tanpa animasi, strip fitur tidak di-pin — biar bisa digeser manual */
+  .hstrip-viewport {
+    overflow-x: auto;
+    scrollbar-width: thin;
   }
 }

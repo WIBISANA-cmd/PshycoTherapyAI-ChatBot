@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Logo from './Logo';
 
 const PROMPTS = [
   { icon: '😟', label: 'Saya sedang cemas', text: 'Aku lagi cemas banget dan susah menenangkan pikiran.' },
@@ -15,9 +16,8 @@ export default function Welcome({ onPick }) {
           initial={{ scale: 0.85, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-          className="grid size-16 place-items-center rounded-2xl bg-linear-to-br from-sky-400 to-sky-600 text-3xl shadow-lg shadow-sky-200"
         >
-          💙
+          <Logo className="size-16" />
         </motion.div>
 
         <motion.h1
@@ -26,7 +26,7 @@ export default function Welcome({ onPick }) {
           transition={{ delay: 0.1 }}
           className="mt-5 text-2xl font-bold text-slate-900 sm:text-3xl"
         >
-          Hai, aku <span className="text-sky-600">PshycoTherapyAI</span>
+          Hai, aku <span className="text-sky-600">ShyTherAI</span>
         </motion.h1>
 
         <motion.p
@@ -69,7 +69,7 @@ export default function Welcome({ onPick }) {
           className="mt-8 max-w-md rounded-xl bg-sky-50/70 px-4 py-3 text-xs leading-relaxed text-slate-500"
         >
           Aku bukan psikolog atau psikiater berlisensi dan tidak bisa memberi diagnosis maupun saran obat. Untuk kondisi
-          yang berat, temui tenaga profesional. Dalam keadaan darurat hubungi <strong>119 ext. 8</strong>.
+          yang berat, temui tenaga profesional.
         </motion.p>
       </div>
     </div>

@@ -166,8 +166,8 @@ export default function Composer({ onSend, disabled }) {
         )}
 
         <p className="px-1 py-2 text-center text-[11px] leading-snug text-slate-400">
-          PshycoTherapyAI adalah teman bercerita berbasis AI, <strong className="font-semibold">bukan pengganti</strong>{' '}
-          psikolog atau psikiater berlisensi. Dalam keadaan darurat hubungi 119 ext. 8.
+          ShyTherAI adalah teman bercerita berbasis AI, <strong className="font-semibold">bukan pengganti</strong>{' '}
+          psikolog atau psikiater berlisensi.
         </p>
       </form>
     </div>
